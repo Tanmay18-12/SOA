@@ -1,0 +1,42 @@
+service: image-resize-service
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs16.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+  environment:
+    STORAGE_BUCKET: ${self:service}-${self:provider.stage}-bucket
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:PutObject
+        - s3:GetObject
+      Resource: "arn:aws:s3:::${self:provider.environment.STORAGE_BUCKET}/*"
+
+functions:
+  resizeImage:
+    handler: src/handler.resizeImage
+    memorySize: 1024
+    timeout: 30
+    events:
+      - http:
+          path: resize
+          method: post
+          cors: true
+
+resources:
+  Resources:
+    StorageBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.STORAGE_BUCKET}
+
+plugins:
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    port: 3000

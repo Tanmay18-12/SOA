@@ -1,0 +1,13 @@
+version: "3.3"
+services:
+  gateway:
+    image: openfaas/gateway:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - functions_provider_url=http://faas-netesd:8080
+    depends_on:
+      - faas-netesd
+
+  faas-netesd:
+    image: openfaas/faas-netes:latest
