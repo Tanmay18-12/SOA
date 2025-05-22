@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentiment Analysis Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            display: none;
+        }
+        .positive {
+            color: green;
+            font-weight: bold;
+        }
+        .negative {
+            color: red;
+            font-weight: bold;
+        }
+        .neutral {
+            color: gray;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sentiment Analysis Demo</h1>
+        <p>Enter some text below to analyze its sentiment:</p>
+        
+        <textarea id="text-input" placeholder="Type your text here..."></textarea>
+        <button onclick="analyzeSentiment()">Analyze Sentiment</button>
+        
+        <div id="result" class="result">
+            <h3>Analysis Result:</h3>
+            <p>Sentiment: <span id="sentiment-result"></span></p>
+            <p>Confidence: <span id="confidence-result"></span></p>
+            <p>Model Version: <span id="model-version"></span></p>
+        </div>
+    </div>
+    
+    <script>
+        async function analyzeSentiment() {
+            const textInput = document.getElementById('text-input').value;
+            
+            if (!textInput.trim()) {
+                alert('Please enter some text to analyze');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8000/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text: textInput })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Error analyzing sentiment');
+                }
+                
+                const data = await response.json();
+                
+                // Display results
+                document.getElementById('result').style.display = 'block';
+                
+                const sentimentResult = document.getElementById('sentiment-result');
+                sentimentResult.textContent = data.sentiment.toUpperCase();
+                sentimentResult.className = data.sentiment.toLowerCase();
+                
+                document.getElementById('confidence-result').textContent = 
+                    (data.confidence * 100).toFixed(2) + '%';
+                document.getElementById('model-version').textContent = 
+                    data.model_version;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error analyzing sentiment. Please try again.');
+            }
+        }
+    </script>
+</body>
+</html>

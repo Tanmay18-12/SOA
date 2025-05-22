@@ -1,91 +1,83 @@
-# Serverless Image Resizing Service - Architecture Documentation
+# Image Resizing Serverless Function
 
-## Overview
+This project implements a serverless image resizing service using AWS Lambda and API Gateway. The function can be integrated into existing SOA/microservice architectures to handle image processing tasks.
 
-This project implements a serverless image resizing service integrated with an existing microservice ecosystem. It demonstrates the Function-as-a-Service (FaaS) approach to handle specific tasks within a Service-Oriented Architecture (SOA).
+## Prerequisites
 
-## Architecture Components
+1. AWS CLI installed and configured
+2. AWS SAM CLI installed
+3. Node.js and npm installed
+4. An AWS account with appropriate permissions
 
-![Architecture Diagram](https://via.placeholder.com/800x400?text=Serverless+Image+Resizing+Architecture)
+## Setup Instructions
 
-### 1. Serverless Function (AWS Lambda)
-- **Purpose**: Handles image resizing operations
-- **Implementation**: Node.js with Sharp library
-- **Triggers**: HTTP requests via API Gateway
-- **Storage**: Uploads resized images to S3 bucket
+### 1. Install Dependencies
 
-### 2. API Gateway
-- Exposes the Lambda function as a RESTful API endpoint
-- Handles authentication and request validation
-- Provides CORS support for web clients
+Navigate to the function directory and install dependencies:
 
-### 3. Client Application
-- Simple Express.js web application
-- Provides user interface for uploading and resizing images
-- Communicates with the serverless function via HTTP
+```bash
+cd function
+npm install
+```
 
-### 4. Storage Service (AWS S3)
-- Stores the resized images
-- Provides public URLs for accessing the images
-- Manages image lifecycle (auto-deletion if needed)
+### 2. Deploy the Stack
 
-### 5. Monitoring and Observability
-- CloudWatch for metrics and logging
-- Custom metrics for function performance
-- Cost tracking for serverless invocations
+Navigate to the infrastructure directory and deploy using SAM:
 
-## Data Flow
+```bash
+cd ../infrastructure
+sam build
+sam deploy --guided
+```
 
-1. User uploads an image through the client application
-2. Client application sends the image to the serverless function via API Gateway
-3. Serverless function processes the image (resizing)
-4. Resized image is stored in S3 bucket
-5. URL to the resized image is returned to the client
-6. Client displays the original and resized images to the user
-7. Metrics about the operation are recorded in CloudWatch
+Follow the prompts to complete the deployment. When the deployment is complete, note the API Gateway endpoint URL from the outputs.
 
-## Key Characteristics
+## Testing the Function
 
-### Scalability
-- Serverless functions automatically scale based on demand
-- No infrastructure management required
-- Can handle varying loads without provisioning
+You can test the function using curl or any API client:
 
-### Cost Efficiency
-- Pay-per-use model for serverless functions
-- No costs when the service is not in use
-- Resource allocation matched to actual demand
+```bash
+curl -X POST \
+  https://your-api-id.execute-api.your-region.amazonaws.com/Prod/resize \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "bucket": "source-bucket-name",
+    "key": "path/to/source-image.jpg",
+    "width": 300,
+    "height": 200,
+    "outputBucket": "destination-bucket-name",
+    "outputKey": "path/to/resized-image.jpg"
+  }'
+```
 
-### Cold Starts
-- First request might experience latency due to cold starts
-- Subsequent requests are faster as the function stays "warm"
-- Configuration options like provisioned concurrency can mitigate cold starts
+## Integration with Microservices
 
-### Integration Points
-- REST API for client-service communication
-- S3 for persistent storage
-- CloudWatch for monitoring and logging
+This function can be integrated with other services by:
 
-## Deployment Process
+1. Making HTTP calls to the API Gateway endpoint
+2. Setting up event-driven triggers (e.g., S3 events)
+3. Orchestrating with AWS Step Functions
 
-1. Configure AWS credentials
-2. Install dependencies (`npm install`)
-3. Deploy serverless function (`npm run deploy`)
-4. Note the endpoint URL returned from deployment
-5. Start the client application with the endpoint URL (`RESIZE_SERVICE_URL=<endpoint> npm start`)
+## Monitoring and Observability
 
-## Cost Monitoring
+The deployment includes a CloudWatch dashboard that provides metrics for:
 
-The architecture includes custom metrics for:
-- Function invocation count
-- Execution time
-- Input/output image sizes
-- Compression ratio
+- Function invocations
+- Error rates
+- Execution duration
+- API Gateway latency
+- 4XX and 5XX errors
 
-These metrics can be used to create CloudWatch dashboards for monitoring costs and performance.
+You can access this dashboard in the CloudWatch console under "Dashboards" with the name "ImageResizeFunctionDashboard-{stack-name}".
 
-## Limitations
+## Cost Considerations
 
-- Maximum payload size limited by API Gateway (10MB)
-- Maximum execution time for Lambda functions (default 30s)
-- Cold starts can impact latency for infrequent requests
+This serverless architecture incurs costs based on:
+
+- Number of invocations
+- Function execution time
+- API Gateway requests
+- Data transfer
+- S3 storage and operations
+
+The pay-per-use model ensures you only pay for what you use, but be mindful of potential cold starts affecting performance.
